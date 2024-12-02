@@ -176,10 +176,17 @@
             ctx.fillStyle = ELEMENT_COLOR;
             ctx.textAlign = 'center';
             
-            // Draw left score
-            drawSegmentedNumber(leftScore, GAME_AREA.x + (GAME_AREA.width / 4), SCORE_CONFIG.yPosition);
-            // Draw right score
-            drawSegmentedNumber(rightScore, GAME_AREA.x + (GAME_AREA.width * 3/4), SCORE_CONFIG.yPosition);
+            // Format scores with leading zeros
+            const leftScoreFormatted = String(leftScore).padStart(2, '0');
+            const rightScoreFormatted = String(rightScore).padStart(2, '0');
+            
+            // Draw left score - draw each digit separately
+            drawSegmentedNumber(parseInt(leftScoreFormatted[0]), GAME_AREA.x + (GAME_AREA.width / 4) - 25, SCORE_CONFIG.yPosition);
+            drawSegmentedNumber(parseInt(leftScoreFormatted[1]), GAME_AREA.x + (GAME_AREA.width / 4) + 25, SCORE_CONFIG.yPosition);
+            
+            // Draw right score - draw each digit separately
+            drawSegmentedNumber(parseInt(rightScoreFormatted[0]), GAME_AREA.x + (GAME_AREA.width * 3/4) - 25, SCORE_CONFIG.yPosition);
+            drawSegmentedNumber(parseInt(rightScoreFormatted[1]), GAME_AREA.x + (GAME_AREA.width * 3/4) + 25, SCORE_CONFIG.yPosition);
             
             // Draw the center line
             for(let i = 0; i < GAME_AREA.height; i += CENTER_LINE.gap) {
