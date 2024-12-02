@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pong Game</title>
+    <style>
+        body {
+            background: #000;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .tv-container {
+            position: relative;
+            padding: 40px;
+            background: #111;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255,255,255,0.1);
+        }
+
+        canvas {
+            background: black;
+            display: block;
+            filter: brightness(1.2) contrast(1.2) blur(0.5px);
+        }
+
+        .tv-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.05) 0px,
+                rgba(255, 255, 255, 0.05) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="tv-container">
+        <canvas id="pongCanvas" width="750" height="500"></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gameArea = {
+            x: 63,
+            y: 0,
+            width: 625,
+            height: 500
+        };
+
+        // Game objects
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            speedX: 7,
+            speedY: 7
+        };
+
+        const paddleHeight = 63;
+        const paddleWidth = 10;
+        const leftPaddle = {
+            x: gameArea.x + 10,
+            y: canvas.height / 2 - paddleHeight / 2,
+            speed: 8
+        };
+
+        const rightPaddle = {
+            x: gameArea.x + gameArea.width - paddleWidth - 10,
+            y: canvas.height / 2 - paddleHeight / 2,
+            speed: 8
+        };
+
+        let leftScore = 0;
+        let rightScore = 0;
+
+        // Keyboard controls
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false
+        };
+
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        // Add game over state variable at the top with other variables
+        let gameOver = false;
+        const WINNING_SCORE = 15;
+
+        // Add direction tracking
+        let lastScorer = 'right';  // Track who scored last to alternate serve direction
+
+        // Add new variables at the top
+        let rallyCount = 0;  // Count consecutive human hits
+        let isWaitingToServe = false;
+        let serveTimeout = null;
+
+        // Add paddle velocity tracking
+        let leftPaddleVelocity = 0;
+        let rightPaddleVelocity = 0;
+        let lastLeftPaddleY = 0;
+        let lastRightPaddleY = 0;
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle(x, y, width, height) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(x, y, width, height);
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '60px "Courier New"';
+            
+            ctx.fillText(leftScore, gameArea.x + (gameArea.width / 4), 60);
+            ctx.fillText(rightScore, gameArea.x + (gameArea.width * 3/4), 60);
+            
+            // Draw the center line
+            for(let i = 0; i < gameArea.height; i += 20) {
+                ctx.fillRect(gameArea.x + (gameArea.width/2) - 5, i, 10, 10);
+            }
+
+            if (gameOver) {
+                ctx.font = '30px "Courier New"';
+                ctx.fillText('GAME OVER', gameArea.x + (gameArea.width/2) - 80, gameArea.height/2);
+            }
+        }
+
+        function moveBall() {
+            if (gameOver || isWaitingToServe) return;
+            
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+
+            // Top and bottom collisions
+            if (ball.y + ball.radius > gameArea.height || ball.y - ball.radius < 0) {
+                ball.speedY = -ball.speedY;
+            }
+
+            // Paddle collisions with angle modification and paddle velocity
+            if (ball.speedX < 0) {
+                if (ball.x - ball.radius < leftPaddle.x + paddleWidth && 
+                    ball.x - ball.radius > leftPaddle.x && 
+                    ball.y > leftPaddle.y && 
+                    ball.y < leftPaddle.y + paddleHeight) {
+                    
+                    const hitLocation = (ball.y - leftPaddle.y) / paddleHeight;
+                    adjustBallAngle(hitLocation, leftPaddleVelocity);
+                    ball.speedX = -ball.speedX;
+                }
+            } else {
+                if (ball.x + ball.radius > rightPaddle.x && 
+                    ball.x + ball.radius < rightPaddle.x + paddleWidth && 
+                    ball.y > rightPaddle.y && 
+                    ball.y < rightPaddle.y + paddleHeight) {
+                    
+                    const hitLocation = (ball.y - rightPaddle.y) / paddleHeight;
+                    adjustBallAngle(hitLocation, rightPaddleVelocity);
+                    ball.speedX = -ball.speedX;
+                    rallyCount++;
+                }
+            }
+
+            // Scoring
+            if (ball.x < gameArea.x) {
+                rightScore++;
+                lastScorer = 'right';
+                if (rightScore >= WINNING_SCORE) {
+                    gameOver = true;
+                }
+                startServeDelay();
+            } else if (ball.x > gameArea.x + gameArea.width) {
+                leftScore++;
+                lastScorer = 'left';
+                if (leftScore >= WINNING_SCORE) {
+                    gameOver = true;
+                }
+                startServeDelay();
+            }
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw game area background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#111';
+            ctx.fillRect(gameArea.x, gameArea.y, gameArea.width, gameArea.height);
+            
+            // Update ball position
+            moveBall();
+
+            // Update paddle positions
+            movePaddles();
+
+            // Draw the paddles
+            drawPaddle(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+            drawPaddle(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+
+            // Draw the ball
+            drawBall();
+
+            // Draw the score
+            drawScore();
+        }
+
+        // Simplify resetBall to just reset position
+        function resetBall() {
+            if (lastScorer === 'right') {
+                // Serve from left side
+                ball.x = gameArea.x + 50;
+                ball.speedX = Math.abs(ball.speedX); // Force ball to go right
+                lastScorer = 'left';
+            } else {
+                // Serve from right side
+                ball.x = gameArea.x + gameArea.width - 50;
+                ball.speedX = -Math.abs(ball.speedX); // Force ball to go left
+                lastScorer = 'right';
+            }
+            
+            // Randomize Y position near the serving paddle
+            ball.y = Math.random() * (gameArea.height - 100) + 50;
+            ball.speedY = Math.random() * 10 - 5;
+        }
+
+        // Main game loop
+        function gameLoop() {
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Update movePaddles function to include AI
+        function movePaddles() {
+            // Store previous positions to calculate velocity
+            lastLeftPaddleY = leftPaddle.y;
+            lastRightPaddleY = rightPaddle.y;
+
+            // AI for left paddle with intentional miss after 7 human hits
+            const paddleCenter = leftPaddle.y + paddleHeight/2;
+            let ballPrediction = ball.y;
+            
+            // Only move if ball is coming towards AI
+            if (ball.speedX < 0) {
+                if (rallyCount >= 7) {
+                    // Intentionally miss
+                    ballPrediction = Math.random() > 0.5 ? -50 : canvas.height + 50;
+                } else {
+                    // Normal AI behavior with some randomness
+                    ballPrediction += (Math.random() * 30 - 15);
+                }
+
+                if (Math.random() > 0.1) {
+                    if (paddleCenter < ballPrediction - 10) {
+                        leftPaddle.y += leftPaddle.speed * (Math.random() * 0.8 + 0.2);
+                    } else if (paddleCenter > ballPrediction + 10) {
+                        leftPaddle.y -= leftPaddle.speed * (Math.random() * 0.8 + 0.2);
+                    }
+                }
+            }
+            
+            // Keep AI paddle within bounds
+            if (leftPaddle.y < 0) leftPaddle.y = 0;
+            if (leftPaddle.y > canvas.height - paddleHeight) {
+                leftPaddle.y = canvas.height - paddleHeight;
+            }
+
+            // Right paddle (human player)
+            if (keys.ArrowUp && rightPaddle.y > 0) {
+                rightPaddle.y -= rightPaddle.speed;
+            }
+            if (keys.ArrowDown && rightPaddle.y < canvas.height - paddleHeight) {
+                rightPaddle.y += rightPaddle.speed;
+            }
+
+            // Calculate paddle velocities
+            leftPaddleVelocity = leftPaddle.y - lastLeftPaddleY;
+            rightPaddleVelocity = rightPaddle.y - lastRightPaddleY;
+        }
+
+        // Add new function for serve delay
+        function startServeDelay() {
+            isWaitingToServe = true;
+            rallyCount = 0; // Reset rally count on score
+            clearTimeout(serveTimeout);
+            serveTimeout = setTimeout(() => {
+                isWaitingToServe = false;
+                resetBall();
+            }, 1000); // 1 second delay
+        }
+
+        // Add new function for ball angle adjustment
+        function adjustBallAngle(hitLocation, paddleVelocity) {
+            let baseSpeed;
+            
+            // Middle third
+            if (hitLocation > 0.33 && hitLocation < 0.66) {
+                baseSpeed = Math.random() * 6 - 3; // Smaller angle
+            }
+            // Upper third
+            else if (hitLocation <= 0.33) {
+                baseSpeed = -Math.random() * 8 - 4; // Larger upward angle
+            }
+            // Lower third
+            else {
+                baseSpeed = Math.random() * 8 + 4; // Larger downward angle
+            }
+
+            // Add paddle velocity influence (scaled down to not be too extreme)
+            ball.speedY = baseSpeed + (paddleVelocity * 0.5);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html> 
