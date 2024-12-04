@@ -19,6 +19,24 @@ const keys = {
 document.addEventListener('keydown', (e) => keys[e.key] = true);
 document.addEventListener('keyup', (e) => keys[e.key] = false);
 
+// Add touch event listeners
+canvas.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    console.log(touch.clientY);
+    if (touch.clientY < canvas.height / 2) {
+        keys.ArrowDown = false;
+        keys.ArrowUp = true; // Simulate ArrowUp
+    } else {
+        keys.ArrowUp = false;
+        keys.ArrowDown = true; // Simulate ArrowDown
+    }
+});
+
+canvas.addEventListener('touchend', () => {
+    keys.ArrowUp = false; // Reset ArrowUp
+    keys.ArrowDown = false; // Reset ArrowDown
+});
+
 function update() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
