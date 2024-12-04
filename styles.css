@@ -1,0 +1,49 @@
+body {
+    background: #000;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.tv-container {
+    position: relative;
+    padding: 40px;
+    background: #111;
+    border-radius: 20px;
+    box-shadow: 0 0 50px rgba(255,255,255,0.1);
+}
+
+canvas {
+    background: black;
+    display: block;
+    filter: brightness(1.2) contrast(1.2) blur(0.5px);
+}
+
+.tv-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.05) 0px,
+        rgba(255, 255, 255, 0.05) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    animation: scanline 10s linear infinite;
+}
+
+@keyframes scanline {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 0 100%;
+    }
+}
