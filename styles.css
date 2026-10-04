@@ -1,49 +1,343 @@
+/* =====================================================================
+   Late-1960s table-top TV
+   walnut veneer box with rounded edges, cream bakelite tube mask with a
+   brass trim, curved grey-green glass, rotary channel selector, two
+   knurled knobs, gold-thread speaker cloth behind wooden slats, piano
+   keys, small feet. Textures: wood.svg, cloth.svg (SVG noise).
+   ===================================================================== */
+
+html, body {
+    height: 100%;
+}
+
 body {
-    background: #000;
     margin: 0;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    /* evening living room: warm lamp light from the upper left */
+    background:
+        radial-gradient(ellipse 70% 60% at 30% 25%, rgba(255, 190, 120, 0.10) 0%, rgba(0, 0, 0, 0) 70%),
+        linear-gradient(180deg, #1d1814 0%, #15110e 70%, #0e0b09 100%);
 }
 
-.tv-container {
+/* ---------------------------------------------------------- the box */
+
+.tv {
     position: relative;
-    padding: 40px;
-    background: #111;
-    border-radius: 20px;
-    box-shadow: 0 0 50px rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* soft contact shadow on the sideboard */
+.tv::after {
+    content: '';
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    bottom: -14px;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 70%);
+    z-index: -1;
+}
+
+.front {
+    --wood: 34px;
+    position: relative;
+    display: flex;
+    gap: 28px;
+    padding: var(--wood);
+    border-radius: 22px / 26px;
+    background:
+        /* lamp light and varnish sheen */
+        radial-gradient(ellipse 80% 70% at 25% 10%, rgba(255, 214, 160, 0.16) 0%, rgba(0, 0, 0, 0) 60%),
+        linear-gradient(180deg, rgba(255, 220, 170, 0.08) 0%, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.28) 100%),
+        url("wood.svg") 0 0 / 100% 100%,
+        #5a3219;
+    box-shadow:
+        /* rounded wooden edge: highlight on top, shade at the bottom */
+        inset 0 3px 2px rgba(255, 215, 165, 0.35),
+        inset 0 -5px 6px rgba(0, 0, 0, 0.55),
+        inset 4px 0 4px rgba(255, 215, 165, 0.10),
+        inset -4px 0 6px rgba(0, 0, 0, 0.35),
+        /* depth of the box */
+        0 2px 0 #2a160a,
+        0 6px 0 #1f1007,
+        0 30px 70px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------------------------------------------------------- picture tube */
+
+/* cream bakelite mask with a thin brass trim towards the wood */
+.mask {
+    position: relative;
+    padding: 20px;
+    border-radius: 20px / 24px;
+    background:
+        radial-gradient(ellipse 90% 80% at 30% 15%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 60%),
+        linear-gradient(165deg, #e8e1cf 0%, #d6cdb7 50%, #bdb39b 100%);
+    box-shadow:
+        0 0 0 2px #7a5a2a,
+        0 0 0 3px #c9a45c,
+        0 0 0 4px #6b4a1f,
+        0 3px 8px 4px rgba(0, 0, 0, 0.55),
+        inset 0 2px 1px rgba(255, 255, 255, 0.7),
+        inset 0 -3px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* the tube face: pillow-shaped, set back behind the mask */
+.screen {
+    position: relative;
+    line-height: 0;
+    border-radius: 12% / 16%;
+    overflow: hidden;
+    background: #0b0d0c;
+    box-shadow:
+        0 0 0 3px #1b1a17,
+        0 0 0 4px #8d846f,
+        0 0 0 6px #a69d86;
 }
 
 canvas {
-    background: black;
     display: block;
-    filter: brightness(1.2) contrast(1.2) blur(0.5px);
+    background: #0b0d0c;
+    cursor: pointer;
+    touch-action: none;
 }
 
-.tv-container::before {
+/* curved glass: dark edges, a soft lamp reflection, a window highlight */
+.screen::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(255, 255, 255, 0.05) 0px,
-        rgba(255, 255, 255, 0.05) 1px,
-        transparent 1px,
-        transparent 2px
-    );
+    inset: 0;
     pointer-events: none;
-    animation: scanline 10s linear infinite;
+    border-radius: inherit;
+    background:
+        /* reflection of a window, upper left */
+        radial-gradient(ellipse 18% 11% at 22% 16%, rgba(255, 250, 235, 0.045) 0%, rgba(255, 250, 235, 0) 100%),
+        /* broad sheen of the convex glass */
+        radial-gradient(ellipse 75% 55% at 35% 25%, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 70%),
+        /* faint warm lamp glint at the lower right rim */
+        radial-gradient(ellipse 30% 12% at 80% 92%, rgba(255, 200, 140, 0.05) 0%, rgba(255, 200, 140, 0) 100%);
+    z-index: 2;
 }
 
-@keyframes scanline {
-    0% {
-        background-position: 0 0;
+.screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.65) 100%);
+    box-shadow:
+        inset 0 0 18px 6px rgba(0, 0, 0, 0.9),
+        inset 0 0 60px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+}
+
+/* ---------------------------------------------------------- control column */
+
+.side {
+    width: 138px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 6px 0 2px;
+}
+
+/* rotary channel selector: brass ring with numbers, dark knob with a bar */
+.selector {
+    position: relative;
+    flex: none;
+    width: 118px;
+    height: 118px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0) 62%),
+        radial-gradient(circle at 35% 30%, #f1dca0 0%, #c9a55a 45%, #8c6a2c 100%);
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.6),
+        inset 0 1px 1px rgba(255, 245, 210, 0.7),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.35);
+}
+
+.ring span {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 20px;
+    margin-left: -10px;
+    margin-top: -6px;
+    font: bold 10px/12px Georgia, "Times New Roman", serif;
+    color: #3d2a0e;
+    text-align: center;
+    transform: rotate(calc(var(--i) * 30deg)) translateY(-49px);
+}
+
+.selector-knob {
+    position: absolute;
+    inset: 24px;
+    border-radius: 50%;
+    background:
+        /* grip bar */
+        linear-gradient(90deg,
+            rgba(0, 0, 0, 0) 40%, #3a3631 40%, #5a554e 50%, #2c2925 60%, rgba(0, 0, 0, 0) 60%),
+        radial-gradient(circle at 35% 30%, #4c4741 0%, #262321 55%, #121110 100%);
+    box-shadow:
+        0 5px 9px rgba(0, 0, 0, 0.75),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    transform: rotate(60deg);
+}
+
+.selector-knob::after {
+    /* white pointer dot */
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 5px;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: #efe9d8;
+}
+
+.knobs {
+    display: flex;
+    gap: 24px;
+}
+
+/* knurled cream knobs with a metal cap */
+.knob {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, #e2dccb 0%, #e2dccb 52%, rgba(0, 0, 0, 0) 53%),
+        repeating-conic-gradient(#d7cfba 0deg 6deg, #a99f88 6deg 12deg);
+    box-shadow:
+        0 5px 8px rgba(0, 0, 0, 0.65),
+        inset 0 -2px 2px rgba(0, 0, 0, 0.3);
+}
+
+.knob::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff 0%, #c9c9c9 40%, #7d7d7d 100%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.knob::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 3px;
+    width: 3px;
+    height: 7px;
+    margin-left: -1.5px;
+    border-radius: 2px;
+    background: #4b4437;
+}
+
+.knob:nth-child(1) { transform: rotate(-40deg); }
+.knob:nth-child(2) { transform: rotate(70deg); }
+
+/* speaker: gold-thread cloth behind horizontal wooden slats */
+.grille {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 130px;
+    border-radius: 8px;
+    background: url("cloth.svg") 0 0 / 240px 240px, #2a2016;
+    box-shadow:
+        inset 0 3px 8px rgba(0, 0, 0, 0.85),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.6),
+        0 1px 0 rgba(255, 215, 165, 0.2);
+    overflow: hidden;
+}
+
+.grille::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(180deg,
+            rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 9px,
+            #3d2210 9px, #6b3c1d 10px, #7a4622 12px, #4a2913 14px,
+            rgba(0, 0, 0, 0.5) 14px, rgba(0, 0, 0, 0) 16px),
+        url("wood.svg") 0 0 / 100% 100%;
+    -webkit-mask: repeating-linear-gradient(180deg, transparent 0px, transparent 9px, #000 9px, #000 15px);
+            mask: repeating-linear-gradient(180deg, transparent 0px, transparent 9px, #000 9px, #000 15px);
+}
+
+/* two cream piano keys (power / sound) */
+.keys {
+    display: flex;
+    gap: 8px;
+}
+
+.key {
+    width: 38px;
+    height: 18px;
+    border-radius: 3px 3px 4px 4px;
+    background: linear-gradient(180deg, #f1ebda 0%, #d9d0ba 70%, #b5ab93 100%);
+    box-shadow:
+        0 3px 0 #8c836d,
+        0 5px 6px rgba(0, 0, 0, 0.6);
+}
+
+.key.on {
+    transform: translateY(2px);
+    box-shadow:
+        0 1px 0 #8c836d,
+        0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------------------------------------------------------- feet */
+
+.feet {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 9%;
+    height: 12px;
+}
+
+.feet span {
+    width: 46px;
+    height: 12px;
+    border-radius: 0 0 6px 6px;
+    background: linear-gradient(180deg, #1c120b 0%, #2d1d12 60%, #120b07 100%);
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------------------------------------------------------- portrait */
+
+@media (max-aspect-ratio: 1/1) {
+    .front {
+        --wood: 16px;
+        flex-direction: column;
+        gap: 14px;
     }
-    100% {
-        background-position: 0 100%;
+    .side {
+        width: auto;
+        flex-direction: row;
+        padding: 0;
     }
+    .grille {
+        flex: 1;
+        min-height: 44px;
+    }
+    .selector { width: 64px; height: 64px; }
+    .selector-knob { inset: 12px; }
+    .ring { display: none; }
 }

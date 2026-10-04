@@ -1,18 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Pong Game</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pong</title>
     <link href="styles.css" rel="stylesheet"/>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-    <div class="tv-container">
-        <canvas id="pongCanvas" width="750" height="500"></canvas>
+    <div class="tv">
+        <div class="front">
+            <div class="mask">
+                <div class="screen">
+                    <canvas id="pongCanvas"></canvas>
+                </div>
+            </div>
+            <div class="side">
+                <div class="selector">
+                    <div class="ring">
+                        <span style="--i:0">1</span><span style="--i:1">2</span><span style="--i:2">3</span>
+                        <span style="--i:3">4</span><span style="--i:4">5</span><span style="--i:5">6</span>
+                        <span style="--i:6">7</span><span style="--i:7">8</span><span style="--i:8">9</span>
+                        <span style="--i:9">10</span><span style="--i:10">11</span><span style="--i:11">12</span>
+                    </div>
+                    <div class="selector-knob"></div>
+                </div>
+                <div class="knobs">
+                    <div class="knob"></div>
+                    <div class="knob"></div>
+                </div>
+                <div class="grille"></div>
+                <div class="keys">
+                    <div class="key"></div>
+                    <div class="key on"></div>
+                </div>
+            </div>
+        </div>
+        <div class="feet"><span></span><span></span></div>
     </div>
     <script src="config.js"></script>
+    <script src="sound.js"></script>
+    <script src="crt.js"></script>
     <script src="ball.js"></script>
     <script src="paddle.js"></script>
     <script src="score.js"></script>
     <script src="main.js"></script>
 </body>
-</html> 
+</html>

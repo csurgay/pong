@@ -1,53 +1,138 @@
-// Display configuration
-const CANVAS_WIDTH = 750;
-const CANVAS_HEIGHT = 500;
-const BACKGROUND_COLOR = '#000';
-const PLAY_AREA_COLOR = '#111';
-const ELEMENT_COLOR = 'white';
+// =====================================================================
+//  PONG (Atari, 1972) - hardware-faithful parameters
+//
+//  All coordinates are the RAW COUNTER VALUES of the original board:
+//    x = horizontal counter (0..454, 7.16 MHz pixel clock)
+//    y = vertical counter   (0..261, one scan line each)
+//  The first 80 H counts and the first 16 lines are blanking, so the
+//  visible picture is H 80..454 x V 16..261 (375 x 246).
+//
+//  Sources:
+//    Dr. H. Holden, "Atari Pong E circuit analysis"
+//      https://www.pong-story.com/LAWN_TENNIS.pdf
+//    Paul Falstad, Pong circuit simulation
+//      https://www.falstad.com/pong/
+// =====================================================================
 
-// Game area configuration
-const GAME_AREA = {
-    x: 63,                    // Left margin
-    y: 0,                     // Top margin
-    width: 625,               // Playable width
-    height: CANVAS_HEIGHT     // Playable height
+const SCREEN = {
+    HBLANK: 80,          // H 0..79 blanked
+    HTOTAL: 455,         // H counter 0..454
+    VBLANK: 16,          // V 0..15 blanked
+    VTOTAL: 262,         // V counter 0..261
+    W: 375,              // visible width  (455 - 80)
+    VIEW_X: 69,          // left edge of the tube's view: the picture is
+                         // centred on the net (256 - 187), as the
+                         // monitors were adjusted; the paddles at 128H
+                         // and 384H are symmetric around it
+    H: 246,              // visible height (262 - 16)
+    FPS: 60,             // one field = one simulation step
+    ASPECT: 4 / 3        // shown on a 4:3 tube (non-square pixels)
 };
 
-// Ball configuration
-const BALL_CONFIG = {
-    size: 9,                  // Ball size in pixels
-    initialSpeed: 6,          // Base ball speed
-    serveDistance: 50         // Distance from paddle when serving
+const COLORS = {
+    phosphor: '#eef2ff', // slightly bluish white of a B/W TV phosphor
+    afterglow: '#ffe6b4',// warmer tint of the decaying afterglow
+    black: '#000'
 };
 
-// Paddle configuration
-const PADDLE_CONFIG = {
-    width: 10,               // Paddle width
-    height: 63,              // Paddle height
-    speed: 8,                // Paddle movement speed
-    margin: 10,              // Distance from game area edge
-    hitAngleUpperLimit: 6,   // Maximum angle when hitting upper/lower thirds
-    hitAngleMiddleLimit: 2   // Maximum angle when hitting middle third
+// Net: displayed when the H counter hits 256, on/off every 4 lines (4V)
+const NET = { x: 256, width: 1, dashLines: 4 };
+
+// Top and bottom boundary lines. Not on the Atari arcade board (there the
+// ball bounces off the edge of the picture), but several 1970s Pong
+// versions drew dashed walls. With walls on, the ball bounces off them.
+const WALLS = {
+    enabled: true,
+    thickness: 4,        // lines, as thick as the ball
+    inset: 10,           // lines between the picture edge and the wall
+    dash: 8,             // pixels lit
+    gap: 8,              // pixels dark
+    phase: 0             // horizontal offset of the dash pattern
 };
 
-// Scoring configuration
-const SCORE_CONFIG = {
-    winning: 15,             // Points needed to win
-    yPosition: 60,           // Vertical position of score display
-    segmentWidth: 30,        // Width of score segment
-    segmentHeight: 30,       // Height of score segment
-    segmentGap: 8            // Gap between segments
+// Playfield: where the ball bounces vertically
+const FIELD = {
+    top: SCREEN.VBLANK + (WALLS.enabled ? WALLS.inset + WALLS.thickness : 0),
+    bottom: SCREEN.VTOTAL - (WALLS.enabled ? WALLS.inset + WALLS.thickness : 0)
 };
 
-// Timing configuration
-const TIMING = {
-    serveDelay: 1000,       // Delay before serving (milliseconds)
-    aiMissThreshold: 7      // Rally count when AI starts missing
+const PADDLE = {
+    width: 4,            // 4 pixels
+    height: 18,          // original board: 15 lines (7493 counter stops at 15);
+                         // made a little longer here on request
+    leftX: 128,          // starts at 128H
+    rightX: 384,         // starts at 256H + 128H
+    // Paddle 555 one-shots are triggered at 256V; their delay sets the
+    // paddle's top line. Very short delays (low control voltage) do not
+    // work, so the paddle cannot reach the top: a ball hugging the top
+    // edge can sneak past. Long delays have no such limit - the paddle
+    // reaches the bottom edge.
+    minY: FIELD.top + 8,         // top gap: size estimated
+    maxY: FIELD.bottom - 18,     // reaches the bottom of the field
+    // Paddle line counter bits B,C,D: the paddle is split into 8 equal
+    // segments (2 lines each on the 15-line original), top->bottom
+    // -> vertical load value 13..7, 10 = no vertical motion.
+    // Stored here as lines/frame (negative = up).
+    segments: [-3, -2, -1, 0, 0, 1, 2, 3],
+    wheelSensitivity: 0.06,  // mouse wheel: lines per wheel pixel (1 notch ~ 6 lines)
+    // Wheel acceleration: slow turning stays fine, fast spinning moves
+    // the paddle further per notch (speed measured in wheel pixels/s)
+    wheelAccelStart: 700,    // below this speed: no acceleration (a single notch)
+    wheelAccelRange: 800,    // every further 800 px/s adds 1x
+    wheelMaxGain: 2.5,       // at most 2.5x (~15 lines per notch)
+    keySpeed: 3,             // arrow keys: lines per frame
+    smoothing: 0.5           // the paddle glides towards the wheel position
+                             // (fraction of the distance per field)
 };
 
-// Center line configuration
-const CENTER_LINE = {
-    width: 10,              // Width of center line segments
-    height: 10,             // Height of center line segments
-    gap: 20                 // Gap between segments
+const BALL = {
+    size: 4,                     // 4 pixels x 4 lines
+    speeds: [2, 3, 4],           // pixels/frame: MOVE pulse lasts 2, 3 or 4 lines
+    speedUpHits: [4, 12],        // speed steps after the 4th and the 12th hit
+    attractVy: 3,                // attract mode: maximum vertical speed
+    serveDelay: 1.7,             // serve 555 timer, seconds, ball invisible
+    serveX: 258                  // ball reappears just right of the net
+};
+
+const SCORE = {
+    winning: 11,         // PCB switch: 11 or 15
+    top: 32,             // digits occupy lines 32V..63V
+    digitW: 16,          // horizontal segments are 16H long
+    digitH: 32,
+    stroke: 4,           // vertical segments are 4H wide, like the paddle
+    // Score window: left 128H..191H, right 320H..383H (256H,128H,64H).
+    // 32H selects tens/units, the digit itself is drawn while 16H is high
+    // (FE strokes at 16..19, BC strokes at 28..31 within each 32H slot).
+    leftTensX: 144,
+    rightTensX: 336,
+    digitStep: 32,
+    showInAttract: false // in attract mode bats and scores are blanked
+};
+
+const SOUND = {
+    volume: 0.12,
+    paddle: { hz: 491, ms: 16 },   // 16V tap, one field
+    wall:   { hz: 246, ms: 16 },   // 32V tap, one field
+    score:  { hz: 246, ms: 242 }   // 32V tap, 555 one-shot 242 ms
+};
+
+const CRT = {
+    persistence: 0.42,   // afterglow kept per field (0..1): short tail of ~3-4 fields
+    scanlineStrength: 0.9,
+    beamCenter: 0.32,    // where the beam sits inside one line (0..1)
+    beamWidth: 0.25,     // gaussian sigma of the beam, in line heights
+    bloom: 0.5,          // strength of the glow around bright objects
+    bloomRadius: 1.3,    // in native pixels
+    curvature: 0.035,    // barrel distortion of the curved tube face (WebGL)
+    glassBlack: 0.045    // black level of the grey-green tube glass
+};
+
+// Computer player on the left (the original was 2-player only).
+// Tuned to play like a decent human: limited knob speed, reaction
+// delay and aiming error that grows with the ball speed.
+const AI = {
+    maxSpeed: 2.2,       // lines/frame (steep 3-line shots can beat it)
+    reactionFrames: 10,  // how often it re-estimates the ball
+    error: 6,            // aiming error in lines, multiplied by speed level
+    idleSpeed: 1
 };
