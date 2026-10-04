@@ -6,6 +6,8 @@ black-and-white CRT in a late-1960s style wooden table-top TV.
 
 You can try it here: https://csurgay.com/pong
 
+<img width="1284" height="880" alt="image" src="https://github.com/user-attachments/assets/2954c582-4dfc-447c-b0ca-f929ef11bada" />
+
 ![image](https://github.com/user-attachments/assets/e62a3f93-6f24-44e9-b38d-ecf4a2370790)
 
 ## Controls
