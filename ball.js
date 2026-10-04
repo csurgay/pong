@@ -1,7 +1,7 @@
 // =====================================================================
 //  Ball - 4 pixels x 4 lines
 //  Vertical speed: latched from the paddle segment that was hit
-//  Horizontal speed: 3 steps chosen by the hit counter (after 4 and 12 hits)
+//  Horizontal speed: 3 steps chosen by the speed counter (counts 4 and 12)
 // =====================================================================
 
 const ball = {
@@ -12,12 +12,17 @@ const ball = {
     visible: true
 };
 
-let hits = 0; // hit counter, cleared on every miss
+let hitCount = 0;   // speed counter (7493 F1), cleared on every miss and coin
+let rallyHits = 0;  // the player's returns in this rally (for the computer)
+
+function speedLevel() {
+    if (hitCount >= BALL.counterSteps[1]) return 3;
+    if (hitCount >= BALL.counterSteps[0]) return 2;
+    return 1;
+}
 
 function ballSpeed() {
-    if (hits >= BALL.speedUpHits[1]) return BALL.speeds[2];
-    if (hits >= BALL.speedUpHits[0]) return BALL.speeds[1];
-    return BALL.speeds[0];
+    return BALL.speeds[speedLevel() - 1];
 }
 
 // Vertical motion; it bounces at the edge of the playfield (VBLANK on
@@ -37,24 +42,24 @@ function moveBallVertical(silent) {
     }
 }
 
-// Coincidence of ball and paddle video. dirAway: +1 for the left paddle,
-// -1 for the right one. Returns true on a hit.
+// Coincidence of ball and paddle video = HIT. dirAway: +1 for the left
+// paddle, -1 for the right one. As on the board, every field with
+// coincidence is a hit (the direction flip-flop is simply set again).
 function checkPaddleHit(p, dirAway) {
-    if (Math.sign(ball.vx) === dirAway) return false;   // already moving away
-
     const bx = Math.floor(ball.x), by = Math.floor(ball.y);
     const px = p.x, py = Math.floor(p.y);
     if (bx + BALL.size <= px || bx >= px + PADDLE.width) return false;
     if (by + BALL.size <= py || by >= py + PADDLE.height) return false;
 
-    // The paddle line counter at the first coincident line selects the
-    // segment; the vertical speed is latched from it.
+    // The paddle line counter at the first coincident line is latched;
+    // its bits B,C,D (one of 8 segments) give the vertical speed.
     const line = Math.max(by, py) - py;
     const n = PADDLE.segments.length;
     const seg = Math.min(n - 1, Math.floor(line * n / PADDLE.height));
     ball.vy = PADDLE.segments[seg];
 
-    hits++;
+    // the hit sound clocks the speed counter, which stops at 12
+    hitCount = Math.min(BALL.counterSteps[1], hitCount + BALL.countsPerHit);
     ball.vx = dirAway * ballSpeed();
     Sound.play('paddle');
     return true;

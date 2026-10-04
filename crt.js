@@ -35,6 +35,7 @@ const Crt = (() => {
     const dg = comp.getContext('2d', { alpha: false });
 
     const display = document.getElementById('pongCanvas');
+    let uCurv = null, uGlass = null;           // shader uniforms
     const gl = initGL(display);
     const out2d = gl ? null : display.getContext('2d', { alpha: false });
 
@@ -118,14 +119,27 @@ const Crt = (() => {
             ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
             ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true);
 
-            const gb = CRT.glassBlack;
-            ctx.uniform1f(ctx.getUniformLocation(prog, 'curv'), CRT.curvature);
-            ctx.uniform3f(ctx.getUniformLocation(prog, 'glass'), gb * 0.9, gb * 1.05, gb);
+            uCurv = ctx.getUniformLocation(prog, 'curv');
+            uGlass = ctx.getUniformLocation(prog, 'glass');
+            setUniforms(ctx);
             return ctx;
         } catch (e) {
             console.warn('WebGL CRT pass disabled:', e);
             return null;
         }
+    }
+
+    function setUniforms(ctx) {
+        if (!ctx) return;
+        const gb = CRT.glassBlack;
+        ctx.uniform1f(uCurv, CRT.curvature);
+        ctx.uniform3f(uGlass, gb * 0.9, gb * 1.05, gb);
+    }
+
+    // called by the Configuration screen when a CRT parameter changes
+    function updateParams() {
+        mask = buildMask(comp.width, comp.height);
+        setUniforms(gl);
     }
 
     // ------------------------------------------------------- layout
@@ -255,5 +269,9 @@ const Crt = (() => {
     window.addEventListener('resize', resize);
     resize();
 
-    return { g, present, resize, clientToLine, canvas: display };
+    return {
+        g, present, resize, clientToLine, updateParams,
+        curvature: () => gl ? CRT.curvature : 0,
+        canvas: display
+    };
 })();

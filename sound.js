@@ -21,7 +21,8 @@ const Sound = (() => {
     }
 
     function play(name) {
-        if (!ac || ac.state !== 'running') return;
+        if (!SOUND.enabled || !ac || ac.state !== 'running') return;
+        master.gain.value = SOUND.volume;
         const s = SOUND[name];
         const t = ac.currentTime;
         const o = ac.createOscillator();

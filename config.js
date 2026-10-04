@@ -88,7 +88,12 @@ const PADDLE = {
 const BALL = {
     size: 4,                     // 4 pixels x 4 lines
     speeds: [2, 3, 4],           // pixels/frame: MOVE pulse lasts 2, 3 or 4 lines
-    speedUpHits: [4, 12],        // speed steps after the 4th and the 12th hit
+    // Speed counter (7493 F1): MOVE gets longer at counts 4 and 12, and the
+    // counter stops at 12. It is clocked by the 491 Hz hit sound, which
+    // runs for one field per hit -> about 8 counts per hit. So the ball
+    // speeds up after the 1st hit and reaches top speed after the 2nd.
+    counterSteps: [4, 12],
+    countsPerHit: 8,
     attractVy: 3,                // attract mode: maximum vertical speed
     serveDelay: 1.7,             // serve 555 timer, seconds, ball invisible
     serveX: 258                  // ball reappears just right of the net
@@ -106,7 +111,8 @@ const SCORE = {
     leftTensX: 144,
     rightTensX: 336,
     digitStep: 32,
-    showInAttract: false // in attract mode bats and scores are blanked
+    showInAttract: true  // the score video is not gated by ATTRACT: the final
+                         // score stays on screen until the next coin
 };
 
 const SOUND = {
@@ -131,8 +137,10 @@ const CRT = {
 // Tuned to play like a decent human: limited knob speed, reaction
 // delay and aiming error that grows with the ball speed.
 const AI = {
-    maxSpeed: 2.2,       // lines/frame (steep 3-line shots can beat it)
-    reactionFrames: 10,  // how often it re-estimates the ball
-    error: 6,            // aiming error in lines, multiplied by speed level
-    idleSpeed: 1
+    maxSpeed: 4.5,       // lines/frame
+    reactionFrames: 4,   // how often it re-estimates the ball
+    error: 2,            // aiming error in lines, multiplied by speed level
+    idleSpeed: 1,
+    missAfter: 5         // after the player's 5th return in a rally the
+                         // computer deliberately misses (0 = never)
 };

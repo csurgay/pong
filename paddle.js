@@ -42,11 +42,19 @@ function aiMove(p) {
     }
     if (--ai.think <= 0) {
         ai.think = AI.reactionFrames;
-        const level = hits >= BALL.speedUpHits[1] ? 3 : hits >= BALL.speedUpHits[0] ? 2 : 1;
-        const err = (Math.random() + Math.random() - 1) * AI.error * level;
-        // aim with a random part of the paddle -> varied return angles
-        const offset = (Math.random() - 0.5) * (PADDLE.height - 3);
-        ai.aimY = predictBallY(p.x + PADDLE.width) + err - offset;
+        const target = predictBallY(p.x + PADDLE.width);
+        if (AI.missAfter > 0 && rallyHits >= AI.missAfter) {
+            // deliberate miss: park the paddle just clear of the ball,
+            // on the side where there is more room
+            const clear = (PADDLE.height + BALL.size) / 2 + 4;
+            const mid = (FIELD.top + FIELD.bottom) / 2;
+            ai.aimY = target < mid ? target + clear : target - clear;
+        } else {
+            const err = (Math.random() + Math.random() - 1) * AI.error * speedLevel();
+            // aim with a random part of the paddle -> varied return angles
+            const offset = (Math.random() - 0.5) * (PADDLE.height - 3);
+            ai.aimY = target + err - offset;
+        }
     }
     moveToward(p, ai.aimY, AI.maxSpeed);
 }
