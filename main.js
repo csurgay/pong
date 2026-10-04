@@ -21,6 +21,14 @@ const keys = { ArrowUp: false, ArrowDown: false };
 
 // ----------------------------------------------------------- game flow
 
+// RESET key: a new game from 0 : 0 at any time
+function resetGame() {
+    Sound.unlock();
+    if (ConfigUI.isOpen()) ConfigUI.toggle();
+    mode = 'attract';
+    insertCoin();
+}
+
 function insertCoin() {
     Sound.unlock();
     if (mode !== 'attract') return;
@@ -178,6 +186,18 @@ window.addEventListener('wheel', (e) => {
     rightTarget += d * PADDLE.wheelSensitivity * gain;
     rightTarget = Math.max(PADDLE.minY, Math.min(PADDLE.maxY, rightTarget));
 }, { passive: false });
+
+// the CONFIG key on the TV
+const configKey = document.querySelector('.key.config');
+if (configKey) configKey.addEventListener('click', () => { Sound.unlock(); ConfigUI.toggle(); });
+
+// the RESET key on the TV (a momentary push-button)
+const resetKey = document.querySelector('.key.reset');
+if (resetKey) {
+    resetKey.addEventListener('mousedown', () => resetKey.classList.add('pressed'));
+    window.addEventListener('mouseup', () => resetKey.classList.remove('pressed'));
+    resetKey.addEventListener('click', resetGame);
+}
 
 Crt.canvas.addEventListener('mousedown', (e) => {
     if (ConfigUI.isOpen()) ConfigUI.handleDown(e.clientX, e.clientY);

@@ -303,6 +303,31 @@ canvas {
         0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
+/* the CONFIG key: engraved label, opens the Configuration screen */
+.key.config,
+.key.reset {
+    width: 58px;
+    cursor: pointer;
+    font: bold 9px/18px Arial, Helvetica, sans-serif;
+    letter-spacing: 0.12em;
+    text-align: center;
+    color: #6f6654;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    user-select: none;
+}
+
+.key.reset.pressed {
+    transform: translateY(2px);
+    box-shadow:
+        0 1px 0 #8c836d,
+        0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.key.config:hover,
+.key.reset:hover {
+    filter: brightness(1.05);
+}
+
 /* ---------------------------------------------------------- feet */
 
 .feet {

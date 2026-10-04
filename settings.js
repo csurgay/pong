@@ -10,7 +10,7 @@
 // =====================================================================
 
 // extra parameters used by the settings
-PADDLE.topGap = 8;          // lines the paddle cannot reach at the top
+PADDLE.topGap = 6;          // lines the paddle cannot reach at the top
 SOUND.enabled = true;
 
 const pct = (v) => Math.round(v * 100) + '%';
@@ -34,6 +34,7 @@ const SETTINGS = [
     // ------------------------------------------------------------ PLAYERS
     { tab: 'PLAYERS', label: 'COMPUTER MISSES', obj: AI, key: 'missAfter', type: 'slider', min: 0, max: 15, step: 1,
       fmt: v => v === 0 ? 'NEVER' : 'AFTER ' + v },
+    { tab: 'PLAYERS', label: 'COMPUTER MISSES STEEP', obj: AI, key: 'missSteep', type: 'toggle' },
     { tab: 'PLAYERS', label: 'COMPUTER SPEED', obj: AI, key: 'maxSpeed', type: 'slider', min: 1, max: 6, step: 0.5,
       fmt: v => v.toFixed(1) },
     { tab: 'PLAYERS', label: 'COMPUTER REACTION', obj: AI, key: 'reactionFrames', type: 'slider', min: 1, max: 20, step: 1,
@@ -66,7 +67,7 @@ const SETTINGS = [
 SETTINGS.forEach(s => { s.id = s.label; });
 
 const SETTINGS_DEFAULTS = SETTINGS.map(s => s.obj[s.key]);
-const SETTINGS_KEY = 'pong-settings-v1';
+const SETTINGS_KEY = 'pong-settings-v2';   // v2: new, easier / more vintage defaults
 
 // Values that depend on the settings
 function applySettings() {
@@ -109,6 +110,9 @@ function loadSettings() {
         SETTINGS.forEach((s, i) => {
             if (o[s.id] !== undefined && typeof o[s.id] === typeof SETTINGS_DEFAULTS[i]) s.obj[s.key] = o[s.id];
         });
+        // the default glass black level changed from 6.5 % to 9.5 %: an
+        // untouched old default is moved to the new one
+        if (o['GLASS BLACK LEVEL'] === 0.065) CRT.glassBlack = 0.095;
     } catch (e) { /* ignore */ }
     applySettings();
 }

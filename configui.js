@@ -83,7 +83,7 @@ const ConfigUI = (() => {
     const LEFT = X0 + 26;
     const CX = LEFT + 140;          // controls column
     const TRACK = 100;              // slider track length
-    const ROW0 = Y0 + 56, ROWH = 17;
+    const ROW0 = Y0 + 55, ROWH = 16;
 
     let open = false;
     let tab = 0;
@@ -283,11 +283,18 @@ const ConfigUI = (() => {
 
     function handleUp() { dragging = null; }
 
-    function openUI() { open = true; sel = 0; }
-    function close() { open = false; dragging = null; }
+    // the CONFIG key on the TV shows whether the screen is open
+    function syncKey() {
+        const k = document.querySelector('.key.config');
+        if (k) k.classList.toggle('on', open);
+    }
+    function openUI() { open = true; sel = 0; syncKey(); }
+    function close() { open = false; dragging = null; syncKey(); }
+    function toggle() { if (open) close(); else openUI(); }
 
     return {
         isOpen: () => open,
+        toggle,
         draw, handleKey, handleWheel, handleDown, handleMove, handleUp
     };
 })();

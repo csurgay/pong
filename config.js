@@ -58,8 +58,8 @@ const FIELD = {
 
 const PADDLE = {
     width: 4,            // 4 pixels
-    height: 18,          // original board: 15 lines (7493 counter stops at 15);
-                         // made a little longer here on request
+    height: 20,          // original board: 15 lines (7493 counter stops at 15);
+                         // made longer here for easier play
     leftX: 128,          // starts at 128H
     rightX: 384,         // starts at 256H + 128H
     // Paddle 555 one-shots are triggered at 256V; their delay sets the
@@ -68,7 +68,7 @@ const PADDLE = {
     // edge can sneak past. Long delays have no such limit - the paddle
     // reaches the bottom edge.
     minY: FIELD.top + 8,         // top gap: size estimated
-    maxY: FIELD.bottom - 18,     // reaches the bottom of the field
+    maxY: FIELD.bottom - 20,     // reaches the bottom of the field
     // Paddle line counter bits B,C,D: the paddle is split into 8 equal
     // segments (2 lines each on the 15-line original), top->bottom
     // -> vertical load value 13..7, 10 = no vertical motion.
@@ -93,7 +93,7 @@ const BALL = {
     // runs for one field per hit -> about 8 counts per hit. So the ball
     // speeds up after the 1st hit and reaches top speed after the 2nd.
     counterSteps: [4, 12],
-    countsPerHit: 8,
+    countsPerHit: 3,             // original: 8; 3 = gentler speed-up (2nd and 4th hit)
     attractVy: 3,                // attract mode: maximum vertical speed
     serveDelay: 1.7,             // serve 555 timer, seconds, ball invisible
     serveX: 258                  // ball reappears just right of the net
@@ -123,24 +123,26 @@ const SOUND = {
 };
 
 const CRT = {
-    persistence: 0.42,   // afterglow kept per field (0..1): short tail of ~3-4 fields
+    persistence: 0.5,    // afterglow kept per field (0..1): short tail of ~4 fields
     scanlineStrength: 0.9,
     beamCenter: 0.32,    // where the beam sits inside one line (0..1)
-    beamWidth: 0.25,     // gaussian sigma of the beam, in line heights
-    bloom: 0.5,          // strength of the glow around bright objects
+    beamWidth: 0.22,     // gaussian sigma of the beam, in line heights
+    bloom: 0.75,         // strength of the glow around bright objects
     bloomRadius: 1.3,    // in native pixels
-    curvature: 0.035,    // barrel distortion of the curved tube face (WebGL)
-    glassBlack: 0.045    // black level of the grey-green tube glass
+    curvature: 0.06,     // barrel distortion of the curved tube face (WebGL)
+    glassBlack: 0.095    // black level of the grey-green tube glass
 };
 
 // Computer player on the left (the original was 2-player only).
 // Tuned to play like a decent human: limited knob speed, reaction
 // delay and aiming error that grows with the ball speed.
 const AI = {
-    maxSpeed: 4.5,       // lines/frame
-    reactionFrames: 4,   // how often it re-estimates the ball
-    error: 2,            // aiming error in lines, multiplied by speed level
+    maxSpeed: 4,         // lines/frame
+    reactionFrames: 5,   // how often it re-estimates the ball
+    error: 3,            // aiming error in lines, multiplied by speed level
     idleSpeed: 1,
-    missAfter: 5         // after the player's 5th return in a rally the
+    missAfter: 4,        // after the player's 4th return in a rally the
                          // computer deliberately misses (0 = never)
+    missSteep: false     // ON: the computer misses every steep ball
+                         // (vertical speed 3 lines/field, hit with a paddle edge)
 };

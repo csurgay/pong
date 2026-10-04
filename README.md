@@ -15,7 +15,8 @@ You can try it here: https://csurgay.com/pong
 | Insert coin (start a game) | SPACE, ENTER or click on the screen |
 | Right paddle (you) | Mouse wheel; arrow keys and touch also work |
 | Left paddle | Computer |
-| Configuration screen | C (the game pauses while it is open) |
+| Configuration screen | C, or the CONFIG key on the TV (the game pauses while it is open) |
+| New game | the RESET key on the TV (starts again from 0 : 0 at any time) |
 
 The mouse wheel works like the original knob: slow turning moves the paddle
 finely (about 6 lines per notch), fast spinning accelerates up to 2.5x, and
@@ -23,7 +24,7 @@ the paddle glides after the wheel instead of jumping.
 
 ## Configuration screen
 
-Press **C** to open the Configuration screen on the TV. It is drawn by the
+Press **C** or the **CONFIG** key on the TV to open the Configuration screen. It is drawn by the
 game itself, through the CRT, in the look of the original: white blocks on
 black, a toggle is a box (filled = ON), a slider runs on a dashed track
 like the net with a small paddle as its knob, and the selected line is
@@ -32,7 +33,7 @@ marked with the ball.
 | Page | Settings |
 |---|---|
 | GAME | points to win (11 / 15), walls on/off, wall distance, paddle height (15 = original), gap at the top, speed counts per hit (8 = original), serve delay, final score shown after the game |
-| PLAYERS | computer misses after N returns (or never), computer speed, reaction, aim error, wheel step, wheel acceleration, paddle glide, arrow key speed |
+| PLAYERS | computer misses after N returns (or never), computer misses steep balls (on/off), computer speed, reaction, aim error, wheel step, wheel acceleration, paddle glide, arrow key speed |
 | SCREEN | scanlines, beam width, afterglow, bloom, curvature, glass black level, sound on/off, volume |
 
 - Mouse: click a box, drag a slider. Wheel: changes the item under the
@@ -64,8 +65,8 @@ estimate, ✗ = deliberate change (see the next section).
 | Vertical blanking | latch set by VRESET, cleared by 16V → V 0-15 | visible from V 16 | ✓ |
 | Net | 256H delayed by one clock (F3B) → 1 pixel wide at H 256, gated by 4V: 4 lines on / 4 off | same | ✓ |
 | Paddle columns | 128H·H3A → H 128-131 (left), with 256H → H 384-387 (right) | same | ✓ |
-| Paddle height | 7493 line counter (B8 / A8) counts 0-14 and stops at 15 → 15 lines | **18 lines** | ✗ |
-| Paddle range | 555 one-shot triggered at 256V, its delay sets the top line; very short delays do not work → the paddle cannot reach the top, it does reach the bottom | same; size of the top gap estimated (8 lines) | ≈ |
+| Paddle height | 7493 line counter (B8 / A8) counts 0-14 and stops at 15 → 15 lines | **20 lines** (adjustable) | ✗ |
+| Paddle range | 555 one-shot triggered at 256V, its delay sets the top line; very short delays do not work → the paddle cannot reach the top, it does reach the bottom | same; size of the top gap estimated (6 lines, adjustable) | ≈ |
 | Ball | horizontal ball counter 508-511, vertical 252-255 → 4 × 4 | same | ✓ |
 | Score digits | 7448 decoder, window 128H-191H (left) and 320H-383H (right), 32H selects tens/units, digit drawn while 16H is high, lines 32V-63V, middle bar at 44V-47V | same | ✓ |
 | Digit shapes | 7448: 6 without top bar, 9 without bottom bar; tens digit is only a "1", blank below 10 | same | ✓ |
@@ -79,7 +80,7 @@ estimate, ✗ = deliberate change (see the next section).
 | Top / bottom bounce | H2X toggles when the ball video meets VBLANK | same; with the optional walls the ball bounces off the walls | ✓ / ✗ |
 | Horizontal speed | ball counter reloaded with 138 (still), 137 / 139 (right / left) on the lines where MOVE is active; MOVE (H2A, H2B) lasts 2, 3 or 4 lines | 2, 3 or 4 pixels per field | ✓ |
 | Speed counter | 7493 F1, steps at counts 4 and 12, stops at 12, cleared by MISS and by the coin (SRST) | same | ✓ |
-| Speed counter clock | clocked by the 491 Hz hit sound (vpos16 gated by C2A for one field) → about 8 counts per hit: the ball speeds up after the 1st hit and reaches top speed after the 2nd | 8 counts per hit | ≈ |
+| Speed counter clock | clocked by the 491 Hz hit sound (vpos16 gated by C2A for one field) → about 8 counts per hit: the ball speeds up after the 1st hit and reaches top speed after the 2nd | default **3 counts per hit** (gentler: speeds up after the 2nd and 4th hit); 8 = original, adjustable | ✗ |
 | Direction | flip-flop H3B: set by the hits, toggled by SC in attract mode; a miss or a coin does not change it | same | ✓ |
 
 ### Game flow
@@ -107,7 +108,12 @@ estimate, ✗ = deliberate change (see the next section).
 
 ## Deliberate changes
 
-- **Paddle height: 18 lines** instead of 15, for easier play with a mouse
+The defaults are set for a slightly easier game and a more vintage picture
+(stronger curvature, greyer glass, more bloom and afterglow). The
+Configuration screen can set the original values back.
+
+
+- **Paddle height: 20 lines** instead of 15, for easier play with a mouse
   wheel. The 8 velocity segments are scaled with it (`PADDLE.height`).
 - **Dashed top and bottom walls**, as drawn by several 1970s Pong versions;
   the ball bounces off them and the net is clipped to the playfield.
@@ -125,21 +131,28 @@ estimate, ✗ = deliberate change (see the next section).
 The left paddle is played by the computer, like a good human player:
 
 - it predicts where the ball will arrive (including bounces) and re-checks
-  every 4 fields,
-- its paddle speed is limited (4.5 lines per field) and its aim has a small
+  every 5 fields,
+- its paddle speed is limited (4 lines per field) and its aim has a small
   error that grows with the ball speed,
 - it hits with a random part of the paddle, so its returns vary in angle.
 
-**It misses on purpose after your 5th return in a rally.** The rally
-counter counts your returns since the last serve; once it reaches 5, the
+**It misses on purpose after your 4th return in a rally.** The rally
+counter counts your returns since the last serve; once it reaches 4, the
 computer moves its paddle just past the ball on the side with more room,
 so it looks like a near miss. Before that it can still miss now and then,
 mostly when the ball slips through the gap at the top.
 
-In 30 simulated games against a strong automatic player, 88 % of the
-computer's misses came exactly after the 5th return.
+In 30 simulated games against a strong automatic player, 90 % of the
+computer's misses came exactly after the 4th return.
 
-Settings (`AI` in `config.js`): `missAfter` (0 = never miss on purpose),
+**Optionally it also misses every steep ball** (vertical speed 3 lines per
+field, the return from a paddle edge): switch on *COMPUTER MISSES STEEP* on
+the Configuration screen. It then moves its paddle to the side the ball is
+moving away from, so the steep ball cannot run into it. The served ball
+is always steep (the velocity latches are still cleared), so the first
+ball after a serve is always returned. Off by default.
+
+Settings (`AI` in `config.js`): `missAfter` (0 = never miss on purpose), `missSteep`,
 `maxSpeed`, `reactionFrames`, `error`.
 
 ## CRT emulation

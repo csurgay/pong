@@ -43,12 +43,20 @@ function aiMove(p) {
     if (--ai.think <= 0) {
         ai.think = AI.reactionFrames;
         const target = predictBallY(p.x + PADDLE.width);
-        if (AI.missAfter > 0 && rallyHits >= AI.missAfter) {
-            // deliberate miss: park the paddle just clear of the ball,
-            // on the side where there is more room
-            const clear = (PADDLE.height + BALL.size) / 2 + 4;
-            const mid = (FIELD.top + FIELD.bottom) / 2;
-            ai.aimY = target < mid ? target + clear : target - clear;
+        // the served ball is always steep (the velocity latches are still
+        // cleared), so it is returned; steep balls after a hit are missed
+        const steep = AI.missSteep && hitCount > 0 && Math.abs(ball.vy) >= 3;
+        if (steep || (AI.missAfter > 0 && rallyHits >= AI.missAfter)) {
+            // deliberate miss: park the paddle clear of the ball, on the
+            // side the ball is moving away from (a steep ball keeps moving
+            // vertically while it crosses the paddle column)
+            const clear = (PADDLE.height + BALL.size) / 2 + 8;
+            const later = predictBallY(p.x - 8);
+            const above = target - clear, below = target + clear;
+            const roomAbove = above - PADDLE.height / 2 >= PADDLE.minY;
+            const roomBelow = below + PADDLE.height / 2 <= PADDLE.maxY + PADDLE.height;
+            if (later > target) ai.aimY = roomAbove ? above : below + clear;      // ball going down
+            else ai.aimY = roomBelow ? below : above - clear;                     // ball going up
         } else {
             const err = (Math.random() + Math.random() - 1) * AI.error * speedLevel();
             // aim with a random part of the paddle -> varied return angles
